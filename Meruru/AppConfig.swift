@@ -11,6 +11,8 @@ import Cocoa
 
 struct AppConfigData : Codable {
     var mirakurunPath: String?
+    var mirakurunUser: String?
+    var mirakurunPass: String?
 }
 
 class AppConfig {

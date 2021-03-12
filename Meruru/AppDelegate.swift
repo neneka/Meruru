@@ -26,18 +26,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSComboBoxDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         initUI()
         
-        guard let mirakurunPath = AppConfig.shared.currentData?.mirakurunPath ?? promptMirakurunPath() else {
+        guard let mirakurunPath = AppConfig.shared.currentData?.mirakurunPath else {
             showErrorAndQuit(error: NSError(domain: "invalid mirakurun path", code: 0))
             return
         }
 
-        mirakurun = MirakurunAPI(baseURL: URL(string: mirakurunPath + "/api")!)
+        mirakurun = MirakurunAPI(baseURL: URL(string: mirakurunPath)!, user: AppConfig.shared.currentData?.mirakurunUser, pass: AppConfig.shared.currentData?.mirakurunPass)
         mirakurun.fetchStatus { result in
             switch result {
             case .success(let status):
                 AppConfig.shared.currentData?.mirakurunPath = mirakurunPath
                 DispatchQueue.main.async {
-                    self.statusTextField.stringValue = "Mirakurun: v" + status.version
+                     self.statusTextField.stringValue = status.version != nil ? "Mirakurun: v" + status.version! : "Mirakurun"
                 }
                 self.mirakurun.fetchServices { result in
                     switch result {
@@ -101,13 +101,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSComboBoxDelegate {
         mirakurun.fetchPrograms(service: selectedService) { result in
             switch result {
             case .success(let programs):
-                guard let program = self.getNowProgram(programs: programs) else {
+                guard let program = self.getNowProgram(programs: programs, serviceId: selectedService.serviceId) else {
                     return
                 }
                 DispatchQueue.main.async {
-                    self.window?.title = "Meruru - \(program.name) - \(selectedService.name)"
+                    self.window?.title = "Meruru - \(program.name ?? "取得失敗") - \(selectedService.name)"
                 }
-            case .failure(_):
+            case .failure(let error):
+                debugPrint(error)
                 return
             }
         }
@@ -117,9 +118,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSComboBoxDelegate {
         player.play()
     }
     
-    func getNowProgram(programs: [Program]) -> Program? {
+    func getNowProgram(programs: [Program], serviceId: Int) -> Program? {
         let now = Int64(Date().timeIntervalSince1970 * 1000)
-        return programs.first { $0.startAt...($0.startAt + $0.duration) ~= now }
+        return programs.filter { $0.serviceId == serviceId }.first { $0.startAt...($0.startAt + $0.duration) ~= now }
     }
     
     func applicationWillTerminate(_ aNotification: Notification) {
