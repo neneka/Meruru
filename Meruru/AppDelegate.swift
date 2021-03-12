@@ -101,7 +101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSComboBoxDelegate {
         mirakurun.fetchPrograms(service: selectedService) { result in
             switch result {
             case .success(let programs):
-                guard let program = self.getNowProgram(programs: programs, serviceId: selectedService.serviceId) else {
+                guard let program = self.getNowProgram(programs: programs, networkId: selectedService.networkId) else {
                     return
                 }
                 DispatchQueue.main.async {
@@ -118,9 +118,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSComboBoxDelegate {
         player.play()
     }
     
-    func getNowProgram(programs: [Program], serviceId: Int) -> Program? {
+    func getNowProgram(programs: [Program], networkId: Int) -> Program? {
         let now = Int64(Date().timeIntervalSince1970 * 1000)
-        return programs.filter { $0.serviceId == serviceId }.first { $0.startAt...($0.startAt + $0.duration) ~= now }
+        return programs.filter { $0.networkId == networkId && $0.name != nil }.first { $0.startAt...($0.startAt + $0.duration) ~= now }
     }
     
     func applicationWillTerminate(_ aNotification: Notification) {

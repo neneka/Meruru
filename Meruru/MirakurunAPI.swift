@@ -31,6 +31,7 @@ public struct Program : Codable {
     let startAt: Int64
     let duration: Int64
     let serviceId: Int
+    let networkId: Int
 }
 
 public class MirakurunAPI {
